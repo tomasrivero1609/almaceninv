@@ -31,7 +31,7 @@ async function ensureTables() {
 export async function GET() {
   try {
     await ensureTables();
-    const { rows } = await sql`SELECT id, product_id AS "productId", quantity, unit_price AS "unitPrice", total_revenue AS "totalRevenue", date FROM sales ORDER BY date DESC`;
+    const { rows } = await sql`SELECT id, product_id AS "productId", quantity::float8 AS "quantity", unit_price::float8 AS "unitPrice", total_revenue::float8 AS "totalRevenue", date FROM sales ORDER BY date DESC`;
     return NextResponse.json(rows);
   } catch (err) {
     return NextResponse.json({ error: 'Failed to load sales', details: String(err) }, { status: 500 });

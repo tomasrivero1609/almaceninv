@@ -21,7 +21,7 @@ async function ensureTables() {
 export async function GET() {
   try {
     await ensureTables();
-    const { rows } = await sql`SELECT id, code, name, unit_cost AS "unitCost", sale_price AS "salePrice", current_stock AS "currentStock", total_invested AS "totalInvested" FROM products ORDER BY name ASC`;
+    const { rows } = await sql`SELECT id, code, name, unit_cost::float8 AS "unitCost", sale_price::float8 AS "salePrice", current_stock::float8 AS "currentStock", total_invested::float8 AS "totalInvested" FROM products ORDER BY name ASC`;
     return NextResponse.json(rows);
   } catch (err) {
     return NextResponse.json({ error: 'Failed to load products', details: String(err) }, { status: 500 });
