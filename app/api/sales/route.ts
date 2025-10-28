@@ -31,7 +31,20 @@ async function ensureTables() {
 export async function GET() {
   try {
     await ensureTables();
-    const { rows } = await sql`SELECT id, product_id AS "productId", quantity::float8 AS "quantity", unit_price::float8 AS "unitPrice", total_revenue::float8 AS "totalRevenue", date FROM sales ORDER BY date DESC`;
+    const { rows } = await sql`
+      SELECT
+        s.id,
+        s.product_id AS "productId",
+        p.name AS "productName",
+        p.code AS "productCode",
+        s.quantity::float8 AS "quantity",
+        s.unit_price::float8 AS "unitPrice",
+        s.total_revenue::float8 AS "totalRevenue",
+        s.date
+      FROM sales s
+      JOIN products p ON s.product_id = p.id
+      ORDER BY s.date DESC
+    `;
     return NextResponse.json(rows);
   } catch (err) {
     return NextResponse.json({ error: 'Failed to load sales', details: String(err) }, { status: 500 });
@@ -64,7 +77,7 @@ export async function POST(request: Request) {
     // Update product stock
     await sql`UPDATE products SET current_stock = current_stock - ${quantity} WHERE id = ${productId}`;
 
-    return NextResponse.json({ id, productId, quantity, unitPrice, totalRevenue, date: date.toISOString() }, { status: 201 });
+    return NextResponse.json({ id, productId, productName: prodRows[0].name, productCode: prodRows[0].code, quantity, unitPrice, totalRevenue, date: date.toISOString() }, { status: 201 });
   } catch (err) {
     return NextResponse.json({ error: 'Failed to create sale', details: String(err) }, { status: 500 });
   }

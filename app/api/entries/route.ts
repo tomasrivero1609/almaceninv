@@ -31,7 +31,20 @@ async function ensureTables() {
 export async function GET() {
   try {
     await ensureTables();
-    const { rows } = await sql`SELECT id, product_id AS "productId", quantity::float8 AS "quantity", unit_cost::float8 AS "unitCost", total_cost::float8 AS "totalCost", date FROM entries ORDER BY date DESC`;
+    const { rows } = await sql`
+      SELECT
+        e.id,
+        e.product_id AS "productId",
+        p.name AS "productName",
+        p.code AS "productCode",
+        e.quantity::float8 AS "quantity",
+        e.unit_cost::float8 AS "unitCost",
+        e.total_cost::float8 AS "totalCost",
+        e.date
+      FROM entries e
+      JOIN products p ON e.product_id = p.id
+      ORDER BY e.date DESC
+    `;
     return NextResponse.json(rows);
   } catch (err) {
     return NextResponse.json({ error: 'Failed to load entries', details: String(err) }, { status: 500 });
@@ -55,7 +68,12 @@ export async function POST(request: Request) {
     // Update product stock and invested amount
     await sql`UPDATE products SET current_stock = current_stock + ${quantity}, total_invested = total_invested + ${totalCost} WHERE id = ${productId}`;
 
-    return NextResponse.json({ id, productId, quantity, unitCost, totalCost, date: date.toISOString() }, { status: 201 });
+    // Fetch product code/name for immediate UI consistency
+    const { rows: prodRows } = await sql`SELECT name, code FROM products WHERE id = ${productId}`;
+    const productName = prodRows[0]?.name ?? '';
+    const productCode = prodRows[0]?.code ?? '';
+
+    return NextResponse.json({ id, productId, productName, productCode, quantity, unitCost, totalCost, date: date.toISOString() }, { status: 201 });
   } catch (err) {
     return NextResponse.json({ error: 'Failed to create entry', details: String(err) }, { status: 500 });
   }
