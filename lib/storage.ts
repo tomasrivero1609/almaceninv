@@ -7,7 +7,7 @@ export const getProducts = async (): Promise<Product[]> => {
   return res.json();
 };
 
-export const addProduct = async (product: Omit<Product, 'id' | 'currentStock' | 'totalInvested'>): Promise<Product> => {
+export const addProduct = async (product: Omit<Product, 'id' | 'currentStock' | 'totalInvested' | 'unitCost'> & { unitCost?: number }): Promise<Product> => {
   const res = await fetch('/api/products', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -63,5 +63,15 @@ export const addSale = async (sale: Omit<Sale, 'id' | 'date' | 'totalRevenue'> &
   });
   if (!res.ok) throw new Error('Error al registrar venta');
   return res.json();
+};
+
+// Prices adjustment (inflation)
+export const adjustPrices = async (percent: number): Promise<void> => {
+  const res = await fetch('/api/prices/adjust', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ percent }),
+  });
+  if (!res.ok) throw new Error('Error al ajustar precios');
 };
 

@@ -10,6 +10,7 @@ export default function ResumenPage() {
     totalSold: 0,
     grossProfit: 0,
   });
+  const [inflationProbe, setInflationProbe] = useState('');
   const [stats, setStats] = useState({
     products: 0,
     withStock: 0,
@@ -157,6 +158,63 @@ export default function ResumenPage() {
           </p>
         </div>
       )}
+
+      {/* Laboratorio de precios (Investigación) */}
+      <div className="mt-8 bg-gradient-to-br from-purple-900/30 to-violet-900/30 backdrop-blur-sm rounded-xl shadow-xl p-8 border border-purple-500/30 ai-glow">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-200 to-violet-200 bg-clip-text text-transparent mb-6">
+          🔬 Laboratorio de precios (Investigación)
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-purple-300 mb-1">Porcentaje hipotético (%)</label>
+            <input
+              type="number"
+              step="0.1"
+              value={inflationProbe}
+              onChange={(e) => setInflationProbe(e.target.value)}
+              className="w-full px-3 py-2 border border-purple-500/30 rounded-lg bg-purple-900/30 backdrop-blur-sm text-purple-100 placeholder-purple-400 focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 transition-all"
+              placeholder="Ej: 12"
+            />
+            {inflationProbe && (
+              <p className="mt-2 text-sm text-purple-300">
+                Factor simulado:{' '}
+                <span className="font-semibold text-green-400">
+                  {(1 + (parseFloat(inflationProbe) || 0) / 100).toFixed(4)}x
+                </span>
+              </p>
+            )}
+          </div>
+          <div className="p-4 bg-purple-800/30 rounded-lg border border-purple-500/20">
+            <p className="text-sm text-purple-300 mb-2">Impacto en métricas de precios:</p>
+            <ul className="text-sm text-purple-100 space-y-1">
+              <li>
+                Media precios actual:{' '}
+                <span className="font-semibold">
+                  ${{/* simple local calc */}}
+                  {(() => {
+                    const avg = (stats.products === 0) ? 0 : (/* no products list here, provide hint */ 0);
+                    return avg.toFixed ? avg.toFixed(2) : '0.00';
+                  })()}
+                </span>
+              </li>
+              <li>
+                Media precios simulada:{' '}
+                <span className="font-semibold">
+                  {inflationProbe
+                    ? (() => {
+                        const factor = 1 + (parseFloat(inflationProbe) || 0) / 100;
+                        const avg = (stats.products === 0) ? 0 : 0;
+                        const val = avg * factor;
+                        return `$${val.toFixed ? val.toFixed(2) : '0.00'}`;
+                      })()
+                    : '$0.00'}
+                </span>
+              </li>
+              <li className="text-purple-300">Para valores reales, consulta la página de Productos.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
