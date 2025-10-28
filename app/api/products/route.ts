@@ -34,15 +34,16 @@ export async function POST(request: Request) {
     const body = await request.json();
     const id = crypto.randomUUID();
     const { name, code, unitCost, salePrice } = body;
-    if (!name || !code || typeof salePrice !== 'number') {
+    if (!name || !code) {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
     }
     const unitCostVal = typeof unitCost === 'number' ? unitCost : 0;
+    const salePriceVal = typeof salePrice === 'number' ? salePrice : 0;
     await sql`
       INSERT INTO products (id, code, name, unit_cost, sale_price, current_stock, total_invested)
-      VALUES (${id}, ${code}, ${name}, ${unitCostVal}, ${salePrice}, 0, 0)
+      VALUES (${id}, ${code}, ${name}, ${unitCostVal}, ${salePriceVal}, 0, 0)
     `;
-    return NextResponse.json({ id, name, code, unitCost: unitCostVal, salePrice, currentStock: 0, totalInvested: 0 }, { status: 201 });
+    return NextResponse.json({ id, name, code, unitCost: unitCostVal, salePrice: salePriceVal, currentStock: 0, totalInvested: 0 }, { status: 201 });
   } catch (err) {
     return NextResponse.json({ error: 'Failed to create product', details: String(err) }, { status: 500 });
   }

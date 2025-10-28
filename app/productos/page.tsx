@@ -36,7 +36,6 @@ export default function ProductosPage() {
       await addProduct({
         name: formData.name,
         code: formData.code,
-        salePrice: parseFloat(formData.salePrice),
       });
     }
     const list = await getProducts();
@@ -181,21 +180,24 @@ export default function ProductosPage() {
                   placeholder="Nombre del producto"
                 />
               </div>
-              {/* Costo unitario se gestiona sólo vía Entradas; se elimina del formulario */}
-              <div>
-                <label className="block text-sm font-medium text-purple-300 mb-1">
-                  Precio de Venta
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  required
-                  value={formData.salePrice}
-                  onChange={(e) => setFormData({ ...formData, salePrice: e.target.value })}
-                  className="w-full px-3 py-2 border border-purple-500/30 rounded-lg bg-purple-900/30 backdrop-blur-sm text-purple-100 placeholder-purple-400 focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 transition-all"
-                  placeholder="0.00"
-                />
-              </div>
+              {/* Precio de venta sólo en edición; en alta se define luego en Entradas o ajustes */}
+              {editingProduct && (
+                <div>
+                  <label className="block text-sm font-medium text-purple-300 mb-1">
+                    Precio de Venta
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={formData.salePrice}
+                    onChange={(e) => setFormData({ ...formData, salePrice: e.target.value })}
+                    className="w-full px-3 py-2 border border-purple-500/30 rounded-lg bg-purple-900/30 backdrop-blur-sm text-purple-100 placeholder-purple-400 focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 transition-all"
+                    placeholder="0.00"
+                  />
+                  <p className="mt-2 text-xs text-purple-300">Puedes ajustar el precio en cualquier momento o usar el ajuste por inflación.</p>
+                </div>
+              )}
               {/* Se elimina el preview de margen dependiente del costo unitario ingresado */}
               <div className="flex gap-4 pt-4">
                 <button
