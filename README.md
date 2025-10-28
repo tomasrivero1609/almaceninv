@@ -1,36 +1,143 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sistema de Inventario 📦
 
-## Getting Started
+Sistema completo de gestión de inventario con Next.js, Tailwind CSS y TypeScript.
 
-First, run the development server:
+## Funcionalidades
+
+### 🎯 Productos
+- Gestión completa de productos con:
+  - Nombre y código
+  - Costo unitario y precio de venta
+  - Stock actual
+  - Total invertido en compras
+
+### ⬇️ Entradas (Compras)
+- Registro de compras de productos
+- Suma automática de stock
+- Cálculo de costo total
+- Historial de todas las entradas
+
+### ⬆️ Salidas (Ventas)
+- Registro de ventas de productos
+- Resta automática de stock
+- Cálculo de ingresos por venta
+- Validación de stock disponible
+- Historial de todas las ventas
+
+### 💰 Resumen Financiero
+- Total invertido en compras
+- Total vendido
+- Ganancia bruta
+- Estadísticas de productos
+- Alertas de pérdidas
+
+## Tecnologías
+
+- **Next.js 16** - Framework React
+- **TypeScript** - Tipado estático
+- **Tailwind CSS 4** - Estilos
+- **Vercel Postgres** - Persistencia de datos centralizada (API con App Router)
+
+## Desarrollo Local
+
+Primero, instala las dependencias:
+
+```bash
+npm install
+```
+
+Luego, ejecuta el servidor de desarrollo:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Configuración de Entorno
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Crea un archivo `.env.local` en la carpeta `frontend` (ya está ignorado por Git) con:
 
-## Learn More
+```bash
+POSTGRES_URL="postgres://usuario:password@host:port/dbname?sslmode=require"
+```
 
-To learn more about Next.js, take a look at the following resources:
+Para despliegues en Vercel, define `POSTGRES_URL` en Project Settings → Environment Variables.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Despliegue en Vercel
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Opción 1: Desde la línea de comandos
 
-## Deploy on Vercel
+1. Instala la CLI de Vercel:
+```bash
+npm i -g vercel
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+2. Desde la carpeta `frontend`, ejecuta:
+```bash
+vercel
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+3. Sigue las instrucciones en pantalla
+
+### Opción 2: Automático desde GitHub (RECOMENDADO)
+
+1. Sube tu código a GitHub (o crea el repo y haz `git push`)
+2. En Vercel, haz clic en “Add New Project” → “Import Git Repository”
+3. En configuración inicial:
+   - `Root Directory`: `frontend`
+   - Variables de entorno: agrega `POSTGRES_URL`
+4. Confirma y despliega. Cada push a `main` creará una Preview/Production automática.
+
+### Opción 3: Arrastra y suelta
+
+1. Construye el proyecto localmente:
+```bash
+npm run build
+```
+
+2. Ve a [vercel.com/new](https://vercel.com/new)
+3. Arrastra la carpeta `.next` generada
+
+## Características del Despliegue
+
+- ✅ Hosting estático y SSR
+- ✅ SSL automático
+- ✅ URLs personalizadas
+- ✅ CDN global
+- ✅ Despliegues instantáneos desde Git
+- ✅ Previsualizaciones por cada push/PR
+
+## Nota sobre el Almacenamiento
+
+La app usa **Vercel Postgres** mediante endpoints (`/api/products`, `/api/entries`, `/api/sales`). Asegúrate de configurar `POSTGRES_URL` para que el backend funcione tanto en local como en Vercel.
+
+## Scripts Disponibles
+
+- `npm run dev` - Inicia el servidor de desarrollo
+- `npm run build` - Construye la aplicación para producción
+- `npm run start` - Inicia el servidor de producción
+- `npm run lint` - Ejecuta el linter
+
+## Estructura del Proyecto
+
+```
+frontend/
+├── app/
+│   ├── layout.tsx        # Layout principal
+│   ├── page.tsx          # Página de inicio
+│   ├── productos/        # Página de productos
+│   ├── entradas/         # Página de entradas
+│   ├── salidas/          # Página de salidas
+│   └── resumen/          # Página de resumen
+├── components/
+│   └── Navigation.tsx    # Componente de navegación
+├── lib/
+│   └── storage.ts        # Llamadas a API (Vercel Postgres)
+└── types/
+    └── index.ts          # Tipos TypeScript
+```
+
+## Licencia
+
+Este proyecto es de código abierto y está disponible bajo la licencia MIT.

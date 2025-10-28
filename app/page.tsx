@@ -1,65 +1,130 @@
-import Image from "next/image";
+'use client';
+
+import Link from 'next/link';
+import { getProducts, getEntries, getSales } from '@/lib/storage';
+import { useEffect, useState } from 'react';
 
 export default function Home() {
+  const [counts, setCounts] = useState({ products: 0, entries: 0, sales: 0 });
+
+  useEffect(() => {
+    const load = async () => {
+      const [products, entries, sales] = await Promise.all([
+        getProducts(),
+        getEntries(),
+        getSales(),
+      ]);
+      setCounts({
+        products: products.length,
+        entries: entries.length,
+        sales: sales.length,
+      });
+    };
+    load();
+  }, []);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+      <div className="text-center mb-12">
+        <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-100 mb-4">
+          Sistema de Inventario
+        </h1>
+        <p className="text-lg text-zinc-600 dark:text-zinc-400">
+          Gestión completa de productos, entradas y salidas
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <Link href="/productos" className="group">
+          <div className="bg-white dark:bg-zinc-900 rounded-lg shadow p-6 hover:shadow-lg transition-shadow border border-zinc-200 dark:border-zinc-800">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-zinc-600 dark:text-zinc-400">Productos</p>
+                <p className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">{counts.products}</p>
+              </div>
+              <div className="text-4xl">📦</div>
+            </div>
+          </div>
+        </Link>
+
+        <Link href="/entradas" className="group">
+          <div className="bg-white dark:bg-zinc-900 rounded-lg shadow p-6 hover:shadow-lg transition-shadow border border-zinc-200 dark:border-zinc-800">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-zinc-600 dark:text-zinc-400">Entradas</p>
+                <p className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">{counts.entries}</p>
+              </div>
+              <div className="text-4xl">⬇️</div>
+            </div>
+          </div>
+        </Link>
+
+        <Link href="/salidas" className="group">
+          <div className="bg-white dark:bg-zinc-900 rounded-lg shadow p-6 hover:shadow-lg transition-shadow border border-zinc-200 dark:border-zinc-800">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-zinc-600 dark:text-zinc-400">Salidas</p>
+                <p className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">{counts.sales}</p>
+              </div>
+              <div className="text-4xl">⬆️</div>
+            </div>
+          </div>
+        </Link>
+
+        <Link href="/resumen" className="group">
+          <div className="bg-white dark:bg-zinc-900 rounded-lg shadow p-6 hover:shadow-lg transition-shadow border border-zinc-200 dark:border-zinc-800">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-zinc-600 dark:text-zinc-400">Resumen</p>
+                <p className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">📊</p>
+              </div>
+              <div className="text-4xl">💰</div>
+            </div>
+          </div>
+        </Link>
+      </div>
+
+      <div className="bg-white dark:bg-zinc-900 rounded-lg shadow p-8 border border-zinc-200 dark:border-zinc-800">
+        <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-6">¿Cómo funciona?</h2>
+        
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-2 flex items-center gap-2">
+              📦 Productos
+            </h3>
+            <p className="text-zinc-600 dark:text-zinc-400">
+              Administra tus productos con nombre, código, costo unitario, precio de venta y stock actual.
+            </p>
+          </div>
+
+          <div>
+            <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-2 flex items-center gap-2">
+              ⬇️ Entradas (Compras)
+            </h3>
+            <p className="text-zinc-600 dark:text-zinc-400">
+              Registra compras que aumentan el stock y calculan el costo total invertido.
+            </p>
+          </div>
+
+          <div>
+            <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-2 flex items-center gap-2">
+              ⬆️ Salidas (Ventas)
+            </h3>
+            <p className="text-zinc-600 dark:text-zinc-400">
+              Registra ventas que disminuyen el stock y calculan los ingresos totales.
+            </p>
+          </div>
+
+          <div>
+            <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-2 flex items-center gap-2">
+              💰 Resumen Financiero
+            </h3>
+            <p className="text-zinc-600 dark:text-zinc-400">
+              Visualiza el total invertido, vendido y la ganancia bruta de tu negocio.
+            </p>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      </div>
     </div>
   );
 }
