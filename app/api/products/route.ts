@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 async function ensureTables() {
   await sql`
     CREATE TABLE IF NOT EXISTS products (
