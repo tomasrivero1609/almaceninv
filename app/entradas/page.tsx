@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Product, Entry } from '@/types';
-import { getProducts, getEntries, addEntry } from '@/lib/storage';
+import { getProducts, getEntries, addEntry, updateProduct } from '@/lib/storage';
 
 export default function EntradasPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -13,6 +13,7 @@ export default function EntradasPage() {
     productId: '',
     quantity: '',
     unitCost: '',
+    salePrice: '',
   });
 
   useEffect(() => {
@@ -49,11 +50,17 @@ export default function EntradasPage() {
         totalCost,
       });
 
+      // Actualizar precio de venta del producto si fue definido
+      const salePriceVal = parseFloat(formData.salePrice);
+      if (formData.salePrice && isFinite(salePriceVal) && salePriceVal > 0) {
+        await updateProduct(product.id, { salePrice: salePriceVal });
+      }
+
       const [p, e] = await Promise.all([getProducts(), getEntries()]);
       setProducts(p);
       setEntries(e);
       setShowModal(false);
-      setFormData({ productId: '', quantity: '', unitCost: '' });
+      setFormData({ productId: '', quantity: '', unitCost: '', salePrice: '' });
       setError(null);
     } catch (err) {
       setError('No se pudo registrar la entrada. Verifica la conexión a la base de datos.');
@@ -197,6 +204,20 @@ export default function EntradasPage() {
                   placeholder="0.00"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-purple-300 mb-1">
+                  Precio de Venta (opcional)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.salePrice}
+                  onChange={(e) => setFormData({ ...formData, salePrice: e.target.value })}
+                  className="w-full px-3 py-2 border border-purple-500/30 rounded-lg bg-purple-900/30 backdrop-blur-sm text-purple-100 placeholder-purple-400 focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 transition-all"
+                  placeholder="0.00"
+                />
+                <p className="mt-2 text-xs text-purple-300">Si lo defines aquí, se actualizará el precio del producto.</p>
+              </div>
               {formData.productId && formData.quantity && formData.unitCost && (
                 <div className="p-4 bg-purple-800/30 rounded-lg border border-purple-500/20">
                   <p className="text-sm text-purple-300">
@@ -218,7 +239,7 @@ export default function EntradasPage() {
                   type="button"
                   onClick={() => {
                     setShowModal(false);
-                    setFormData({ productId: '', quantity: '', unitCost: '' });
+                    setFormData({ productId: '', quantity: '', unitCost: '', salePrice: '' });
                   }}
                   className="flex-1 bg-purple-800/50 hover:bg-purple-700/50 text-purple-200 py-2 rounded-lg font-medium transition-all border border-purple-500/30"
                 >
