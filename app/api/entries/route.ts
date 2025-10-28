@@ -68,6 +68,9 @@ export async function POST(request: Request) {
     // Update product stock and invested amount
     await sql`UPDATE products SET current_stock = current_stock + ${quantity}, total_invested = total_invested + ${totalCost} WHERE id = ${productId}`;
 
+    // Update product unit_cost to the new average cost
+    await sql`UPDATE products SET unit_cost = total_invested / current_stock WHERE id = ${productId} AND current_stock > 0`;
+
     // Fetch product code/name for immediate UI consistency
     const { rows: prodRows } = await sql`SELECT name, code FROM products WHERE id = ${productId}`;
     const productName = prodRows[0]?.name ?? '';
