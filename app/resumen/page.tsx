@@ -190,23 +190,14 @@ export default function ResumenPage() {
               <li>
                 Media precios actual:{' '}
                 <span className="font-semibold">
-                  ${{/* simple local calc */}}
-                  {(() => {
-                    const avg = (stats.products === 0) ? 0 : (/* no products list here, provide hint */ 0);
-                    return avg.toFixed ? avg.toFixed(2) : '0.00';
-                  })()}
+                  {`$${(0).toFixed(2)}`}
                 </span>
               </li>
               <li>
                 Media precios simulada:{' '}
                 <span className="font-semibold">
                   {inflationProbe
-                    ? (() => {
-                        const factor = 1 + (parseFloat(inflationProbe) || 0) / 100;
-                        const avg = (stats.products === 0) ? 0 : 0;
-                        const val = avg * factor;
-                        return `$${val.toFixed ? val.toFixed(2) : '0.00'}`;
-                      })()
+                    ? `$${(0 * (1 + (parseFloat(inflationProbe) || 0) / 100)).toFixed(2)}`
                     : '$0.00'}
                 </span>
               </li>
