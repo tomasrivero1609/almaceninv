@@ -75,3 +75,19 @@ export const adjustPrices = async (percent: number): Promise<void> => {
   if (!res.ok) throw new Error('Error al ajustar precios');
 };
 
+// Multi-sale (cart) transaction
+export const addMultiSale = async (items: Array<{ productId: string; quantity: number }>): Promise<{
+  transactionId: string;
+  date: string;
+  totalRevenue: number;
+  items: Sale[];
+}> => {
+  const res = await fetch('/api/sales', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ items }),
+  });
+  if (!res.ok) throw new Error('Error al registrar venta múltiple');
+  return res.json();
+};
+
