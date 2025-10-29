@@ -3,25 +3,35 @@
 import { useEffect, useMemo, useState } from "react";
 import { Product, Sale } from "@/types";
 import { getProducts, getSales, addMultiSale } from "@/lib/storage";
+import { useToastContext } from '@/components/ToastProvider';
 
 type CartItem = { productId: string; quantity: string };
 
 export default function SalidasPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([{ productId: "", quantity: "" }]);
   const [submitting, setSubmitting] = useState(false);
   const availableProducts = useMemo(() => products.filter((p) => p.currentStock > 0), [products]);
+  const toast = useToastContext();
 
   useEffect(() => {
     const load = async () => {
-      const [p, s] = await Promise.all([getProducts(), getSales()]);
-      setProducts(p);
-      setSales(s);
+      try {
+        setLoading(true);
+        const [p, s] = await Promise.all([getProducts(), getSales()]);
+        setProducts(p);
+        setSales(s);
+      } catch (error) {
+        toast.error('Error al cargar datos');
+      } finally {
+        setLoading(false);
+      }
     };
     load();
-  }, []);
+  }, [toast]);
 
   const validateCart = () => {
     if (cart.length === 0) return false;
@@ -53,8 +63,9 @@ export default function SalidasPage() {
       setSales(s);
       setShowModal(false);
       setCart([{ productId: "", quantity: "" }]);
+      toast.success('Venta registrada correctamente');
     } catch (err) {
-      alert("No se pudo registrar la venta múltiple. Verifica stock y precios.");
+      toast.error("No se pudo registrar la venta múltiple. Verifica stock y precios.");
     } finally {
       setSubmitting(false);
     }
@@ -161,7 +172,12 @@ export default function SalidasPage() {
         </button>
       </div>
 
-      {groups.length === 0 ? (
+      {loading ? (
+        <div className="rounded-xl shadow-sm p-12 text-center border border-zinc-200/20 bg-white/70 dark:bg-zinc-900/50">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
+          <p className="mt-4 text-zinc-500 dark:text-zinc-400">Cargando ventas...</p>
+        </div>
+      ) : groups.length === 0 ? (
         <div className="rounded-xl shadow-sm p-12 text-center border border-zinc-200/20 bg-white/70 dark:bg-zinc-900/50">
           <p className="text-zinc-500 dark:text-zinc-300 text-lg mb-4">No hay ventas registradas</p>
           <button
@@ -182,7 +198,7 @@ export default function SalidasPage() {
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-zinc-500 dark:text-zinc-400">Total</p>
-                  <p className="text-xl font-bold text-green-600 dark:text-green-400">${g.total.toFixed(2)}</p>
+                  <p className="text-xl font-bold text-green-600 dark:text-green-600 dark:text-green-400">${g.total.toFixed(2)}</p>
                 </div>
               </div>
           <div className="overflow-x-auto">
@@ -231,9 +247,9 @@ export default function SalidasPage() {
                 const subtotal = (parseFloat(line.quantity) || 0) * unit;
                 const alreadySelected = new Set(cart.map((c) => c.productId).filter(Boolean));
                 return (
-                  <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 bg-purple-800/20 rounded-lg border border-purple-500/20">
+                  <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 bg-zinc-50/60 dark:bg-zinc-900/40 rounded-lg border border-zinc-200/30 dark:border-zinc-800">
                     <div className="md:col-span-6">
-                      <label className="block text-sm font-medium text-purple-300 mb-1">Producto</label>
+                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Producto</label>
                       <select
                         required
                         value={line.productId}
@@ -241,7 +257,7 @@ export default function SalidasPage() {
                           const v = e.target.value;
                           setCart((prev) => prev.map((c, i) => (i === idx ? { ...c, productId: v } : c)));
                         }}
-                        className="w-full px-3 py-2 border border-purple-500/30 rounded-lg bg-purple-900/30 backdrop-blur-sm text-purple-100 focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 transition-all"
+                        className="w-full px-3 py-2 border border-zinc-300/40 dark:border-zinc-700 rounded-lg bg-white/70 dark:bg-zinc-900/50 text-zinc-900 dark:text-zinc-100 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/20 transition-all"
                       >
                         <option value="">Seleccionar producto</option>
                         {availableProducts.map((p) => (
@@ -249,7 +265,7 @@ export default function SalidasPage() {
                             key={p.id}
                             value={p.id}
                             disabled={alreadySelected.has(p.id) && p.id !== line.productId}
-                            className="bg-purple-900 text-purple-100"
+                            className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
                           >
                             {p.code} - {p.name} (Stock: {p.currentStock})
                           </option>
@@ -257,7 +273,7 @@ export default function SalidasPage() {
                       </select>
                     </div>
                     <div className="md:col-span-3">
-                      <label className="block text-sm font-medium text-purple-300 mb-1">Cantidad</label>
+                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Cantidad</label>
                       <input
                         type="number"
                         step="0.01"
@@ -268,31 +284,31 @@ export default function SalidasPage() {
                         onChange={(e) => {
                           setCart((prev) => prev.map((c, i) => (i === idx ? { ...c, quantity: e.target.value } : c)));
                         }}
-                        className="w-full px-3 py-2 border border-purple-500/30 rounded-lg bg-purple-900/30 backdrop-blur-sm text-purple-100 placeholder-purple-400 focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 transition-all"
+                        className="w-full px-3 py-2 border border-zinc-300/40 dark:border-zinc-700 rounded-lg bg-white/70 dark:bg-zinc-900/50 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/20 transition-all"
                         placeholder="0.00"
                       />
                       {line.productId && (
-                        <p className="mt-1 text-xs text-purple-300">Stock disp.: <span className="text-purple-100 font-semibold">{max}</span></p>
+                        <p className="mt-1 text-xs text-zinc-700 dark:text-zinc-300">Stock disp.: <span className="text-zinc-900 dark:text-zinc-100 font-semibold">{max}</span></p>
                       )}
                     </div>
                     <div className="md:col-span-2 flex items-end">
                       <div className="w-full">
-                        <p className="text-sm text-purple-300">P. unitario</p>
-                        <p className="text-purple-100 font-semibold">${unit.toFixed(2)}</p>
+                        <p className="text-sm text-zinc-700 dark:text-zinc-300">P. unitario</p>
+                        <p className="text-zinc-900 dark:text-zinc-100 font-semibold">${unit.toFixed(2)}</p>
                       </div>
                     </div>
                     <div className="md:col-span-1 flex items-end">
                       <button
                         type="button"
                         onClick={() => setCart((prev) => prev.filter((_, i) => i !== idx))}
-                        className="w-full bg-red-900/40 hover:bg-red-800/40 text-red-200 py-2 rounded-lg font-medium transition-all border border-red-500/30"
+                        className="w-full bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 py-2 rounded-lg font-medium transition-all border border-red-200 dark:border-red-800"
                         aria-label="Eliminar línea"
                       >
                         �Y-'��?
                       </button>
                     </div>
                     <div className="md:col-span-12 text-right">
-                      <p className="text-sm text-purple-300">Subtotal: <span className="text-green-400 font-semibold">${subtotal.toFixed(2)}</span></p>
+                      <p className="text-sm text-zinc-700 dark:text-zinc-300">Subtotal: <span className="text-green-600 dark:text-green-400 font-semibold">${subtotal.toFixed(2)}</span></p>
                     </div>
                   </div>
                 );
@@ -302,12 +318,12 @@ export default function SalidasPage() {
                 <button
                   type="button"
                   onClick={() => setCart((prev) => [...prev, { productId: "", quantity: "" }])}
-                  className="bg-purple-800/50 hover:bg-purple-700/50 text-purple-200 px-4 py-2 rounded-lg font-medium transition-all border border-purple-500/30"
+                  className="bg-zinc-200/60 hover:bg-zinc-200 text-zinc-800 dark:bg-zinc-800/60 dark:hover:bg-zinc-800 dark:text-zinc-100 px-4 py-2 rounded-lg font-medium transition-colors border border-zinc-300/40 dark:border-zinc-700"
                 >
                   Agregar producto
                 </button>
                 <div className="text-right">
-                  <p className="text-sm text-purple-300">Total: <span className="text-green-400 font-semibold">${cartTotal.toFixed(2)}</span></p>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">Total: <span className="text-green-600 dark:text-green-600 dark:text-green-400 font-semibold text-lg">${cartTotal.toFixed(2)}</span></p>
                 </div>
               </div>
 
@@ -315,7 +331,7 @@ export default function SalidasPage() {
                 <button
                   type="submit"
                   disabled={!validateCart() || submitting}
-                  className="flex-1 bg-violet-600 hover:bg-violet-700 disabled:opacity-60 text-white py-2 rounded-lg font-medium transition-colors"
+                  className="flex-1 bg-violet-600 hover:bg-violet-700 disabled:opacity-60 disabled:cursor-not-allowed text-white py-2 rounded-lg font-medium transition-colors"
                 >
                   {submitting ? "Procesando..." : "Registrar Venta"}
                 </button>
@@ -325,7 +341,7 @@ export default function SalidasPage() {
                     setShowModal(false);
                     setCart([{ productId: "", quantity: "" }]);
                   }}
-                  className="flex-1 bg-purple-800/50 hover:bg-purple-700/50 text-purple-200 py-2 rounded-lg font-medium transition-all border border-purple-500/30"
+                  className="flex-1 bg-zinc-200/60 hover:bg-zinc-200 text-zinc-800 dark:bg-zinc-800/60 dark:hover:bg-zinc-800 dark:text-zinc-100 py-2 rounded-lg font-medium transition-colors border border-zinc-300/40 dark:border-zinc-700"
                 >
                   Cancelar
                 </button>

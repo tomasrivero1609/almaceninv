@@ -3,33 +3,50 @@
 import { useEffect, useState } from 'react';
 import { getEntries, getProducts, getSales } from '@/lib/storage';
 import { Summary } from '@/types';
+import { useToastContext } from '@/components/ToastProvider';
 
 export default function ResumenPage() {
   const [summary, setSummary] = useState<Summary>({ totalInvested: 0, totalSold: 0, grossProfit: 0 });
   const [stats, setStats] = useState({ products: 0, withStock: 0, withoutStock: 0, entries: 0, sales: 0 });
+  const [loading, setLoading] = useState(true);
+  const toast = useToastContext();
 
   useEffect(() => {
     const load = async () => {
-      const [products, entries, sales] = await Promise.all([getProducts(), getEntries(), getSales()]);
-      const totalInvested = entries.reduce((sum, entry) => sum + entry.totalCost, 0);
-      const totalSold = sales.reduce((sum, sale) => sum + sale.totalRevenue, 0);
-      const grossProfit = totalSold - totalInvested;
-      setSummary({ totalInvested, totalSold, grossProfit });
-      setStats({
-        products: products.length,
-        withStock: products.filter(p => p.currentStock > 0).length,
-        withoutStock: products.filter(p => p.currentStock === 0).length,
-        entries: entries.length,
-        sales: sales.length,
-      });
+      try {
+        setLoading(true);
+        const [products, entries, sales] = await Promise.all([getProducts(), getEntries(), getSales()]);
+        const totalInvested = entries.reduce((sum, entry) => sum + entry.totalCost, 0);
+        const totalSold = sales.reduce((sum, sale) => sum + sale.totalRevenue, 0);
+        const grossProfit = totalSold - totalInvested;
+        setSummary({ totalInvested, totalSold, grossProfit });
+        setStats({
+          products: products.length,
+          withStock: products.filter(p => p.currentStock > 0).length,
+          withoutStock: products.filter(p => p.currentStock === 0).length,
+          entries: entries.length,
+          sales: sales.length,
+        });
+      } catch (error) {
+        toast.error('Error al cargar el resumen');
+      } finally {
+        setLoading(false);
+      }
     };
     load();
-  }, []);
+  }, [toast]);
 
   return (
     <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
       <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100 mb-8">Resumen Financiero</h1>
 
+      {loading ? (
+        <div className="rounded-xl shadow-sm p-12 text-center border border-zinc-200/20 bg-white/70 dark:bg-zinc-900/50">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
+          <p className="mt-4 text-zinc-500 dark:text-zinc-400">Cargando resumen...</p>
+        </div>
+      ) : (
+        <>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
         <div className="rounded-xl shadow-sm p-8 border border-zinc-200/30 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/50">
           <h3 className="text-lg font-semibold text-zinc-700 dark:text-zinc-300 mb-2">Total Invertido</h3>
@@ -74,6 +91,8 @@ export default function ResumenPage() {
           <h3 className="text-lg font-semibold text-red-700 dark:text-red-300">Pérdida detectada</h3>
           <p className="text-red-700 dark:text-red-200 mt-2">El costo de tus compras supera tus ventas. Considera revisar tus precios o estrategia de ventas.</p>
         </div>
+      )}
+        </>
       )}
     </div>
   );

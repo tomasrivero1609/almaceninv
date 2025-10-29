@@ -3,29 +3,34 @@
 import { useEffect, useState } from 'react';
 import { Entry, Product } from '@/types';
 import { addEntry, getEntries, getProducts, updateProduct } from '@/lib/storage';
+import { useToastContext } from '@/components/ToastProvider';
 
 export default function EntradasPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [entries, setEntries] = useState<Entry[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({ productId: '', quantity: '', unitCost: '', salePrice: '' });
+  const toast = useToastContext();
 
   useEffect(() => {
     const load = async () => {
       try {
+        setLoading(true);
         const [p, e] = await Promise.all([getProducts(), getEntries()]);
         setProducts(p);
         setEntries(e);
-        setError(null);
       } catch (err) {
-        setError('No se pudo cargar Entradas. Verifica la conexión a la base de datos (POSTGRES_URL).');
+        toast.error('No se pudo cargar Entradas. Verifica la conexión a la base de datos.');
         setProducts([]);
         setEntries([]);
+      } finally {
+        setLoading(false);
       }
     };
     load();
-  }, []);
+  }, [toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,6 +39,7 @@ export default function EntradasPage() {
     const quantity = parseFloat(formData.quantity);
     const unitCost = parseFloat(formData.unitCost);
     const totalCost = quantity * unitCost;
+    setSubmitting(true);
     try {
       await addEntry({ productId: formData.productId, productName: product.name, productCode: product.code, quantity, unitCost, totalCost });
       const salePriceVal = parseFloat(formData.salePrice);
@@ -45,9 +51,11 @@ export default function EntradasPage() {
       setEntries(e);
       setShowModal(false);
       setFormData({ productId: '', quantity: '', unitCost: '', salePrice: '' });
-      setError(null);
+      toast.success('Entrada registrada correctamente');
     } catch (err) {
-      setError('No se pudo registrar la entrada. Verifica la conexión a la base de datos.');
+      toast.error('No se pudo registrar la entrada. Verifica la conexión a la base de datos.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -58,13 +66,12 @@ export default function EntradasPage() {
         <button onClick={() => setShowModal(true)} className="bg-violet-600 hover:bg-violet-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">Registrar Entrada</button>
       </div>
 
-      {error && (
-        <div className="mb-6 p-4 rounded-lg border border-red-300/50 bg-red-50 text-red-700 dark:border-red-800/50 dark:bg-red-900/30 dark:text-red-200">
-          {error}
+      {loading ? (
+        <div className="rounded-xl shadow-sm p-12 text-center border border-zinc-200/20 bg-white/70 dark:bg-zinc-900/50">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
+          <p className="mt-4 text-zinc-500 dark:text-zinc-400">Cargando entradas...</p>
         </div>
-      )}
-
-      {entries.length === 0 ? (
+      ) : entries.length === 0 ? (
         <div className="rounded-xl shadow-sm p-12 text-center border border-zinc-200/20 bg-white/70 dark:bg-zinc-900/50">
           <p className="text-zinc-500 dark:text-zinc-300 text-lg mb-4">No hay entradas registradas</p>
           <button onClick={() => setShowModal(true)} className="bg-violet-600 hover:bg-violet-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">Registrar primera entrada</button>
@@ -72,27 +79,27 @@ export default function EntradasPage() {
       ) : (
         <div className="rounded-xl shadow-sm overflow-hidden border border-zinc-200/30 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/50">
           <div className="overflow-x-auto">
-            <table className="min-w-full">
+            <table className="min-w-full" aria-label="Tabla de entradas">
               <thead className="sticky top-0 bg-white/90 dark:bg-zinc-900/90 backdrop-blur">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Fecha</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Producto</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Cantidad</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Costo Unitario</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Costo Total</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Fecha</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Producto</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Cantidad</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Costo Unitario</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Costo Total</th>
                 </tr>
               </thead>
               <tbody>
                 {entries.map((entry, i) => (
                   <tr key={entry.id} className={i % 2 === 0 ? 'bg-zinc-50/60 dark:bg-zinc-950/30' : ''}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100">{new Date(entry.date).toLocaleDateString()}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100">
+                    <td className="px-3 sm:px-6 py-4 text-sm text-zinc-900 dark:text-zinc-100">{new Date(entry.date).toLocaleDateString()}</td>
+                    <td className="px-3 sm:px-6 py-4 text-sm text-zinc-900 dark:text-zinc-100">
                       <div className="font-medium">{entry.productName}</div>
                       <div className="text-zinc-500 dark:text-zinc-400 text-xs">{entry.productCode}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100">{entry.quantity}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100">${entry.unitCost.toFixed(2)}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100">${entry.totalCost.toFixed(2)}</td>
+                    <td className="px-3 sm:px-6 py-4 text-sm text-zinc-900 dark:text-zinc-100">{entry.quantity}</td>
+                    <td className="px-3 sm:px-6 py-4 text-sm text-zinc-900 dark:text-zinc-100">${entry.unitCost.toFixed(2)}</td>
+                    <td className="px-3 sm:px-6 py-4 text-sm text-zinc-900 dark:text-zinc-100">${entry.totalCost.toFixed(2)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -107,8 +114,8 @@ export default function EntradasPage() {
             <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-6">Registrar Entrada</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-300 mb-1">Producto</label>
-                <select required value={formData.productId} onChange={(e) => setFormData({ ...formData, productId: e.target.value })} className="w-full px-3 py-2 border border-zinc-300/40 dark:border-zinc-700 rounded-lg bg-white/70 dark:bg-zinc-900/50 text-zinc-900 dark:text-zinc-100 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/20 transition-colors">
+                <label htmlFor="product-select" className="block text-sm font-medium text-zinc-600 dark:text-zinc-300 mb-1">Producto</label>
+                <select id="product-select" required value={formData.productId} onChange={(e) => setFormData({ ...formData, productId: e.target.value })} className="w-full px-3 py-2 border border-zinc-300/40 dark:border-zinc-700 rounded-lg bg-white/70 dark:bg-zinc-900/50 text-zinc-900 dark:text-zinc-100 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/20 transition-colors" aria-label="Seleccionar producto">
                   <option value="">Seleccionar producto</option>
                   {products.map((product) => (
                     <option key={product.id} value={product.id} className="bg-white dark:bg-zinc-900">
@@ -136,7 +143,7 @@ export default function EntradasPage() {
                 </div>
               )}
               <div className="flex gap-4 pt-4">
-                <button type="submit" className="flex-1 bg-violet-600 hover:bg-violet-700 text-white py-2 rounded-lg font-medium transition-colors">Registrar</button>
+                <button type="submit" disabled={submitting} className="flex-1 bg-violet-600 hover:bg-violet-700 disabled:opacity-60 disabled:cursor-not-allowed text-white py-2 rounded-lg font-medium transition-colors">{submitting ? 'Registrando...' : 'Registrar'}</button>
                 <button type="button" onClick={() => { setShowModal(false); setFormData({ productId: '', quantity: '', unitCost: '', salePrice: '' }); }} className="flex-1 bg-zinc-200/60 hover:bg-zinc-200 text-zinc-800 dark:bg-zinc-800/60 dark:hover:bg-zinc-800 dark:text-zinc-100 py-2 rounded-lg font-medium transition-colors border border-zinc-300/40 dark:border-zinc-700">Cancelar</button>
               </div>
             </form>
