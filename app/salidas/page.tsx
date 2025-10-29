@@ -168,7 +168,7 @@ export default function SalidasPage() {
           onClick={() => setShowModal(true)}
           className="bg-violet-600 hover:bg-violet-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
         >
-          �z Registrar Venta
+          Registrar Venta
         </button>
       </div>
 
@@ -304,7 +304,7 @@ export default function SalidasPage() {
                         className="w-full bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 py-2 rounded-lg font-medium transition-all border border-red-200 dark:border-red-800"
                         aria-label="Eliminar línea"
                       >
-                        �Y-'��?
+                        Eliminar
                       </button>
                     </div>
                     <div className="md:col-span-12 text-right">

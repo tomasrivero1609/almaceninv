@@ -53,7 +53,7 @@ export default function Home() {
                   <p className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">{counts.products}</p>
                 )}
               </div>
-              <div className="text-3xl opacity-70 group-hover:opacity-100 transition-opacity">📦</div>
+              <div className="h-8 w-8 rounded-md border border-zinc-200/40 dark:border-zinc-700/60 bg-white/50 dark:bg-zinc-900/40" aria-hidden="true" />
             </div>
           </div>
         </Link>
@@ -69,7 +69,7 @@ export default function Home() {
                   <p className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">{counts.entries}</p>
                 )}
               </div>
-              <div className="text-3xl opacity-70 group-hover:opacity-100 transition-opacity">📥</div>
+              <div className="h-8 w-8 rounded-md border border-zinc-200/40 dark:border-zinc-700/60 bg-white/50 dark:bg-zinc-900/40" aria-hidden="true" />
             </div>
           </div>
         </Link>
@@ -85,7 +85,7 @@ export default function Home() {
                   <p className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">{counts.sales}</p>
                 )}
               </div>
-              <div className="text-3xl opacity-70 group-hover:opacity-100 transition-opacity">📤</div>
+              <div className="h-8 w-8 rounded-md border border-zinc-200/40 dark:border-zinc-700/60 bg-white/50 dark:bg-zinc-900/40" aria-hidden="true" />
             </div>
           </div>
         </Link>
@@ -95,9 +95,9 @@ export default function Home() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1">Resumen</p>
-                <p className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">📊</p>
+                <p className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">→</p>
               </div>
-              <div className="text-3xl opacity-70 group-hover:opacity-100 transition-opacity">💎</div>
+              <div className="h-8 w-8 rounded-md border border-zinc-200/40 dark:border-zinc-700/60 bg-white/50 dark:bg-zinc-900/40" aria-hidden="true" />
             </div>
           </div>
         </Link>
