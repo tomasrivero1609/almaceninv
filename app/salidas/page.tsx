@@ -247,8 +247,11 @@ export default function SalidasPage() {
                 const subtotal = (parseFloat(line.quantity) || 0) * unit;
                 const alreadySelected = new Set(cart.map((c) => c.productId).filter(Boolean));
                 return (
-                  <div key={idx} className="glass-muted p-4 grid grid-cols-1 md:grid-cols-12 gap-4">
-                    <div className="md:col-span-6">
+                  <div
+                    key={idx}
+                    className="glass-muted p-4 grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,6fr)_minmax(0,2fr)_minmax(0,2fr)_auto] md:items-end"
+                  >
+                    <div>
                       <label className="block text-xs uppercase tracking-wide text-zinc-400 mb-1">Producto</label>
                       <select
                         required
@@ -272,7 +275,7 @@ export default function SalidasPage() {
                         ))}
                       </select>
                     </div>
-                    <div className="md:col-span-3">
+                    <div>
                       <label className="block text-xs uppercase tracking-wide text-zinc-400 mb-1">Cantidad</label>
                       <input
                         type="number"
@@ -291,23 +294,21 @@ export default function SalidasPage() {
                         <p className="mt-1 text-xs text-zinc-500">Stock disponible: <span className="text-zinc-300 font-medium">{max}</span></p>
                       )}
                     </div>
-                    <div className="md:col-span-2 flex items-end">
-                      <div className="w-full">
-                        <p className="text-xs uppercase tracking-wide text-zinc-400">P. Unitario</p>
-                        <p className="text-zinc-100 font-semibold">${unit.toFixed(2)}</p>
-                      </div>
+                    <div className="flex flex-col gap-1 text-left md:items-end md:text-right">
+                      <p className="text-xs uppercase tracking-wide text-zinc-400">P. Unitario</p>
+                      <p className="text-zinc-100 font-semibold">${unit.toFixed(2)}</p>
                     </div>
-                    <div className="md:col-span-1 flex items-end justify-end">
+                    <div className="flex md:justify-end">
                       <button
                         type="button"
                         onClick={() => setCart((prev) => prev.filter((_, i) => i !== idx))}
-                        className="w-full md:w-auto px-3 py-2 rounded-md border border-zinc-700/50 text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-violet-400/20 transition-colors"
-                        aria-label="Eliminar línea"
+                        className="inline-flex items-center justify-center px-3 py-2 rounded-md border border-zinc-700/50 text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-violet-400/20 transition-colors shrink-0 w-full md:w-auto"
+                        aria-label="Eliminar linea"
                       >
                         Eliminar
                       </button>
                     </div>
-                    <div className="md:col-span-12 text-right">
+                    <div className="md:col-span-full text-right">
                       <p className="text-sm text-zinc-400">Subtotal: <span className="text-zinc-100 font-semibold">${subtotal.toFixed(2)}</span></p>
                     </div>
                   </div>
