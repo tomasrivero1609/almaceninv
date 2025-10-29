@@ -28,6 +28,7 @@ export interface Sale {
   unitPrice: number;
   totalRevenue: number;
   date: string;
+  transactionId?: string;
 }
 
 export interface Summary {

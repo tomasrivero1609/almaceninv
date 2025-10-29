@@ -1,21 +1,20 @@
 @import "tailwindcss";
 
-:root {
-  /* Dark Purple AI Theme */
-  --background: #0f0a1a;
-  --foreground: #e8e3f3;
-  --primary: #8b5cf6;
-  --primary-dark: #7c3aed;
-  --secondary: #a855f7;
-  --accent: #c084fc;
-  --surface: #1a0f2e;
-  --surface-light: #2d1b4e;
-  --border: #4c1d95;
-  --border-light: #6d28d9;
-  --text-muted: #c4b5fd;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --error: #ef4444;
+/* Neutral light/dark tokens via data-theme */
+:root[data-theme="light"] {
+  --background: #ffffff;
+  --foreground: #0b0b0c;
+  --surface: #ffffff;
+  --surface-muted: #f7f7f8;
+  --border: #e5e7eb;
+}
+
+:root[data-theme="dark"] {
+  --background: #0b0b0c;
+  --foreground: #f5f5f6;
+  --surface: #0f1115;
+  --surface-muted: #0c0e12;
+  --border: #1f2430;
 }
 
 @theme inline {
@@ -25,38 +24,19 @@
   --font-mono: var(--font-geist-mono);
 }
 
-body {
-  background: linear-gradient(135deg, #0f0a1a 0%, #1a0f2e 50%, #2d1b4e 100%);
-  background-attachment: fixed;
+html, body {
+  background: var(--background);
   color: var(--foreground);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   min-height: 100vh;
 }
 
-/* Glow effects for AI theme */
-.ai-glow {
-  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
-}
-
-.ai-glow-hover:hover {
-  box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
-  transition: box-shadow 0.3s ease;
-}
+/* Subtle shadows and no purple glow by default */
+.ai-glow { box-shadow: none; }
+.ai-glow-hover:hover { box-shadow: none; }
 
 /* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--surface);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--primary);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--primary-dark);
-}
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--surface-muted); }
+::-webkit-scrollbar-thumb { background: #a1a1aa; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #71717a; }

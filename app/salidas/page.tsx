@@ -63,66 +63,166 @@ export default function SalidasPage() {
   const linePrice = (productId: string) => products.find((p) => p.id === productId)?.salePrice ?? 0;
   const cartTotal = cart.reduce((sum, line) => sum + (parseFloat(line.quantity) || 0) * linePrice(line.productId), 0);
 
+  // Group sales by transactionId (fallback to id)
+  const groups = useMemo(() => {
+    const map = new Map<string, { id: string; date: string; items: Sale[]; total: number }>();
+    for (const s of sales) {
+      const key = s.transactionId || s.id;
+      const g = map.get(key) || { id: key, date: s.date, items: [], total: 0 };
+      g.items.push(s);
+      g.total += s.totalRevenue;
+      if (new Date(s.date) < new Date(g.date)) g.date = s.date;
+      map.set(key, g);
+    }
+    return Array.from(map.values()).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [sales]);
+
+  const exportCsv = (g: { id: string; date: string; items: Sale[]; total: number }) => {
+    const header = ['transactionId','date','productCode','productName','quantity','unitPrice','totalRevenue'];
+    const rows = g.items.map(it => [
+      it.transactionId || g.id,
+      new Date(it.date).toISOString(),
+      it.productCode,
+      it.productName,
+      String(it.quantity),
+      it.unitPrice.toFixed(2),
+      it.totalRevenue.toFixed(2)
+    ]);
+    const csv = [header.join(','), ...rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `venta-${g.id}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const printGroup = (g: { id: string; date: string; items: Sale[]; total: number }) => {
+    const w = window.open('', '_blank');
+    if (!w) return;
+    const rows = g.items.map(it => `
+      <tr>
+        <td style="padding:4px 8px;border-bottom:1px solid #ddd;">${it.productCode}</td>
+        <td style="padding:4px 8px;border-bottom:1px solid #ddd;">${it.productName}</td>
+        <td style="padding:4px 8px;border-bottom:1px solid #ddd;">${it.quantity}</td>
+        <td style="padding:4px 8px;border-bottom:1px solid #ddd;">$${it.unitPrice.toFixed(2)}</td>
+        <td style="padding:4px 8px;border-bottom:1px solid #ddd;">$${it.totalRevenue.toFixed(2)}</td>
+      </tr>
+    `).join('');
+    w.document.write(`
+      <html>
+        <head>
+          <title>Venta ${g.id}</title>
+          <meta charset="utf-8" />
+          <style>
+            body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; padding: 24px; }
+            h1 { font-size: 18px; margin: 0 0 8px; }
+            p { margin: 0 0 12px; color: #444; }
+            table { width: 100%; border-collapse: collapse; }
+            th { text-align: left; padding: 6px 8px; border-bottom: 1px solid #000; }
+          </style>
+        </head>
+        <body>
+          <h1>Recibo de venta</h1>
+          <p>Transacción: ${g.id}</p>
+          <p>Fecha: ${new Date(g.date).toLocaleString()}</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Precio</th>
+                <th>Importe</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows}
+            </tbody>
+          </table>
+          <h2 style="text-align:right;margin-top:12px;">Total: $${g.total.toFixed(2)}</h2>
+          <script>window.onload = () => { window.print(); }</script>
+        </body>
+      </html>
+    `);
+    w.document.close();
+  };
+
   return (
     <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-200 to-violet-200 bg-clip-text text-transparent">�Y"� Salidas (Ventas)</h1>
+        <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">Salidas (Ventas)</h1>
         <button
           onClick={() => setShowModal(true)}
-          className="bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white px-6 py-3 rounded-lg font-medium transition-all ai-glow-hover"
+          className="bg-violet-600 hover:bg-violet-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
         >
           �z Registrar Venta
         </button>
       </div>
 
-      {sales.length === 0 ? (
-        <div className="bg-gradient-to-br from-purple-900/30 to-violet-900/30 backdrop-blur-sm rounded-xl shadow-xl p-12 text-center border border-purple-500/30 ai-glow">
-          <p className="text-purple-300 text-lg mb-4">No hay ventas registradas</p>
+      {groups.length === 0 ? (
+        <div className="rounded-xl shadow-sm p-12 text-center border border-zinc-200/20 bg-white/70 dark:bg-zinc-900/50">
+          <p className="text-zinc-500 dark:text-zinc-300 text-lg mb-4">No hay ventas registradas</p>
           <button
             onClick={() => setShowModal(true)}
-            className="bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white px-6 py-3 rounded-lg font-medium transition-all ai-glow-hover"
+            className="bg-violet-600 hover:bg-violet-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
           >
             Registrar primera venta
           </button>
         </div>
       ) : (
-        <div className="bg-gradient-to-br from-purple-900/30 to-violet-900/30 backdrop-blur-sm rounded-xl shadow-xl overflow-hidden border border-purple-500/30 ai-glow">
+        <div className="space-y-4">
+          {groups.map((g) => (
+            <div key={g.id} className="rounded-lg border border-zinc-200/30 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/50 overflow-hidden">
+              <div className="flex flex-wrap items-center justify-between px-4 py-3 border-b border-zinc-200/40 dark:border-zinc-800">
+                <div className="space-y-0.5">
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">Venta</p>
+                  <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{new Date(g.date).toLocaleString()}</h3>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">Total</p>
+                  <p className="text-xl font-bold text-green-600 dark:text-green-400">${g.total.toFixed(2)}</p>
+                </div>
+              </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-purple-500/20">
-              <thead className="bg-purple-950/50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-purple-300 uppercase tracking-wider">Fecha</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-purple-300 uppercase tracking-wider">Producto</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-purple-300 uppercase tracking-wider">Cantidad</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-purple-300 uppercase tracking-wider">Precio Unitario</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-purple-300 uppercase tracking-wider">Ingresos Totales</th>
+            <table className="min-w-full">
+              <thead className="sticky top-0 bg-white/90 dark:bg-zinc-900/90 backdrop-blur">
+                <tr className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase">
+                  <th className="px-4 py-2">Producto</th>
+                  <th className="px-4 py-2">Cantidad</th>
+                  <th className="px-4 py-2">Precio Unitario</th>
+                  <th className="px-4 py-2">Importe</th>
                 </tr>
               </thead>
-              <tbody className="bg-purple-900/20 divide-y divide-purple-500/20">
-                {sales.map((sale) => (
-                  <tr key={sale.id} className="hover:bg-purple-800/30 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-100">{new Date(sale.date).toLocaleDateString()}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-100">
-                      <div>
-                        <div className="font-medium">{sale.productName}</div>
-                        <div className="text-purple-300 text-xs">{sale.productCode}</div>
-                      </div>
+              <tbody>
+                {g.items.map((sale, i) => (
+                  <tr key={sale.id} className={i % 2 === 0 ? "bg-zinc-50/60 dark:bg-zinc-950/30" : ""}>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100">
+                      <div className="font-medium">{sale.productName}</div>
+                      <div className="text-zinc-500 dark:text-zinc-400 text-xs">{sale.productCode}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-100">{sale.quantity}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-100">${sale.unitPrice.toFixed(2)}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-100">${sale.totalRevenue.toFixed(2)}</td>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100">{sale.quantity}</td>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100">${sale.unitPrice.toFixed(2)}</td>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100">${sale.totalRevenue.toFixed(2)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-zinc-200/40 dark:border-zinc-800">
+              <button onClick={() => printGroup(g)} className="px-3 py-1.5 rounded-md border border-zinc-300/60 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">Imprimir</button>
+              <button onClick={() => exportCsv(g)} className="px-3 py-1.5 rounded-md border border-zinc-300/60 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">Exportar CSV</button>
+            </div>
           </div>
+            </div>
+          ))}
         </div>
       )}
 
       {showModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-gradient-to-br from-purple-900/90 to-violet-900/90 backdrop-blur-sm rounded-xl shadow-2xl p-8 max-w-2xl w-full border border-purple-500/30 ai-glow">
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-200 to-violet-200 bg-clip-text text-transparent mb-6">�Y"� Registrar Venta (Carrito)</h2>
+          <div className="rounded-xl shadow-2xl p-8 max-w-2xl w-full border border-zinc-200/30 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur">
+            <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-6">Registrar Venta (Carrito)</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               {cart.map((line, idx) => {
                 const prod = products.find((p) => p.id === line.productId);
@@ -215,7 +315,7 @@ export default function SalidasPage() {
                 <button
                   type="submit"
                   disabled={!validateCart() || submitting}
-                  className="flex-1 bg-gradient-to-r from-purple-600 to-violet-600 disabled:opacity-60 hover:from-purple-700 hover:to-violet-700 text-white py-2 rounded-lg font-medium transition-all ai-glow-hover"
+                  className="flex-1 bg-violet-600 hover:bg-violet-700 disabled:opacity-60 text-white py-2 rounded-lg font-medium transition-colors"
                 >
                   {submitting ? "Procesando..." : "Registrar Venta"}
                 </button>
@@ -237,4 +337,3 @@ export default function SalidasPage() {
     </div>
   );
 }
-
