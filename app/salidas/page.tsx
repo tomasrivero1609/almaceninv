@@ -297,11 +297,11 @@ export default function SalidasPage() {
                         <p className="text-zinc-100 font-semibold">${unit.toFixed(2)}</p>
                       </div>
                     </div>
-                    <div className="md:col-span-1 flex items-end">
+                    <div className="md:col-span-1 flex items-end justify-end">
                       <button
                         type="button"
                         onClick={() => setCart((prev) => prev.filter((_, i) => i !== idx))}
-                        className="w-full bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 py-2 rounded-lg font-medium transition-all border border-red-200 dark:border-red-800"
+                        className="w-full md:w-auto px-3 py-2 rounded-md border border-zinc-700/50 text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-violet-400/20 transition-colors"
                         aria-label="Eliminar línea"
                       >
                         Eliminar
