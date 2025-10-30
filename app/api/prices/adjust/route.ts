@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
+import { ensureAuthTables, getCurrentUser } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 async function ensureTables() {
+  await ensureAuthTables();
   await sql`
     CREATE TABLE IF NOT EXISTS products (
       id VARCHAR(64) PRIMARY KEY,
@@ -21,6 +23,10 @@ async function ensureTables() {
 export async function POST(request: Request) {
   try {
     await ensureTables();
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    }
     const body = await request.json();
     const { percent } = body as { percent?: number };
     if (typeof percent !== 'number' || !isFinite(percent)) {

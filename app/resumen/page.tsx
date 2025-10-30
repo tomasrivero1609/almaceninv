@@ -9,6 +9,7 @@ export default function ResumenPage() {
   const [summary, setSummary] = useState<Summary>({ totalInvested: 0, totalSold: 0, grossProfit: 0 });
   const [stats, setStats] = useState({ products: 0, withStock: 0, withoutStock: 0, entries: 0, sales: 0 });
   const [loading, setLoading] = useState(true);
+  const [sellerStats, setSellerStats] = useState<Array<{ sellerId?: string; sellerName: string; today: number; week: number; month: number; total: number }>>([]);
   const toast = useToastContext();
 
   useEffect(() => {
@@ -27,6 +28,50 @@ export default function ResumenPage() {
           entries: entries.length,
           sales: sales.length,
         });
+        const now = new Date();
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const startOfWeek = new Date(startOfDay);
+        const weekday = (startOfWeek.getDay() + 6) % 7; // Monday as start of week
+        startOfWeek.setDate(startOfWeek.getDate() - weekday);
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+        const transactions = new Map<string, { sellerId?: string; sellerName: string; date: Date }>();
+        for (const sale of sales) {
+          const key = sale.transactionId || sale.id;
+          const saleDate = new Date(sale.date);
+          const existing = transactions.get(key);
+          const sellerName = sale.sellerName ?? existing?.sellerName ?? 'Sin asignar';
+          const sellerId = sale.sellerId ?? existing?.sellerId;
+          if (!existing) {
+            transactions.set(key, { sellerId, sellerName, date: saleDate });
+          } else {
+            if (saleDate < existing.date) {
+              existing.date = saleDate;
+            }
+            existing.sellerName = sellerName;
+            if (sellerId) {
+              existing.sellerId = sellerId;
+            }
+          }
+        }
+
+        const metrics = new Map<string, { sellerId?: string; sellerName: string; today: number; week: number; month: number; total: number }>();
+        transactions.forEach(({ sellerId, sellerName, date }) => {
+          const key = sellerId ?? sellerName;
+          const record = metrics.get(key) ?? { sellerId, sellerName, today: 0, week: 0, month: 0, total: 0 };
+          record.total += 1;
+          if (date >= startOfDay) record.today += 1;
+          if (date >= startOfWeek) record.week += 1;
+          if (date >= startOfMonth) record.month += 1;
+          metrics.set(key, record);
+        });
+
+        const ordered = Array.from(metrics.values()).sort((a, b) => {
+          if (b.month !== a.month) return b.month - a.month;
+          if (b.total !== a.total) return b.total - a.total;
+          return a.sellerName.localeCompare(b.sellerName);
+        });
+        setSellerStats(ordered);
       } catch (error) {
         toast.error('Error al cargar el resumen');
       } finally {
@@ -86,6 +131,43 @@ export default function ResumenPage() {
         </div>
       </div>
 
+      <div className="mt-12 rounded-xl shadow-sm p-8 border border-zinc-200/30 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/50">
+        <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-6">Actividad por vendedor</h2>
+        {sellerStats.length === 0 ? (
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">No hay ventas registradas por ahora.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-zinc-200/40 dark:divide-zinc-800/50 text-sm">
+              <thead className="bg-zinc-50/80 dark:bg-zinc-950/20">
+                <tr className="text-left uppercase tracking-wide text-xs text-zinc-500 dark:text-zinc-400">
+                  <th className="px-4 py-3 font-semibold">Vendedor</th>
+                  <th className="px-4 py-3 font-semibold text-center">Hoy</th>
+                  <th className="px-4 py-3 font-semibold text-center">Semana</th>
+                  <th className="px-4 py-3 font-semibold text-center">Mes</th>
+                  <th className="px-4 py-3 font-semibold text-center">Total</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-200/40 dark:divide-zinc-800/50">
+                {sellerStats.map((seller) => (
+                  <tr key={seller.sellerId ?? seller.sellerName} className="bg-white/70 dark:bg-zinc-900/40">
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-zinc-900 dark:text-zinc-100">{seller.sellerName}</div>
+                      {seller.sellerId && (
+                        <div className="text-xs text-zinc-500 dark:text-zinc-400">ID: {seller.sellerId}</div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-center text-zinc-800 dark:text-zinc-200 font-semibold">{seller.today}</td>
+                    <td className="px-4 py-3 text-center text-zinc-800 dark:text-zinc-200 font-semibold">{seller.week}</td>
+                    <td className="px-4 py-3 text-center text-zinc-800 dark:text-zinc-200 font-semibold">{seller.month}</td>
+                    <td className="px-4 py-3 text-center text-zinc-800 dark:text-zinc-200 font-semibold">{seller.total}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
       {summary.grossProfit < 0 && (
         <div className="mt-6 border border-red-200/40 dark:border-red-800/40 rounded-xl p-6 bg-red-50 dark:bg-red-900/20">
           <h3 className="text-lg font-semibold text-red-700 dark:text-red-300">Pérdida detectada</h3>
@@ -97,4 +179,3 @@ export default function ResumenPage() {
     </div>
   );
 }
-

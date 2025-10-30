@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
+import { ensureAuthTables, getCurrentUser } from '@/lib/auth';
+import type { Sale } from '@/types';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 async function ensureTables() {
+  await ensureAuthTables();
   await sql`
     CREATE TABLE IF NOT EXISTS products (
       id VARCHAR(64) PRIMARY KEY,
@@ -24,16 +27,22 @@ async function ensureTables() {
       unit_price NUMERIC NOT NULL,
       total_revenue NUMERIC NOT NULL,
       date TIMESTAMP NOT NULL,
-      transaction_id VARCHAR(64)
+      transaction_id VARCHAR(64),
+      seller_id VARCHAR(64) REFERENCES users(id)
     );
   `;
   // Backfill column for existing deployments if missing
   await sql`ALTER TABLE IF EXISTS sales ADD COLUMN IF NOT EXISTS transaction_id VARCHAR(64)`;
+  await sql`ALTER TABLE IF EXISTS sales ADD COLUMN IF NOT EXISTS seller_id VARCHAR(64) REFERENCES users(id)`;
 }
 
 export async function GET() {
   try {
     await ensureTables();
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
     const { rows } = await sql`
       SELECT
         s.id,
@@ -44,9 +53,12 @@ export async function GET() {
         s.unit_price::float8 AS "unitPrice",
         s.total_revenue::float8 AS "totalRevenue",
         s.date,
-        s.transaction_id AS "transactionId"
+        s.transaction_id AS "transactionId",
+        s.seller_id AS "sellerId",
+        u.username AS "sellerName"
       FROM sales s
       JOIN products p ON s.product_id = p.id
+      LEFT JOIN users u ON u.id = s.seller_id
       ORDER BY s.date DESC
     `;
     return NextResponse.json(rows);
@@ -58,6 +70,10 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     await ensureTables();
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
     const body = await request.json();
 
     // Batch payload: { items: [{ productId, quantity }] }
@@ -79,7 +95,7 @@ export async function POST(request: Request) {
       const date = new Date();
 
       // Run atomically using explicit BEGIN/COMMIT
-      const resultItems: any[] = [];
+      const resultItems: Sale[] = [];
       await sql`BEGIN`;
       try {
         for (const it of items) {
@@ -103,10 +119,10 @@ export async function POST(request: Request) {
           const totalRevenue = quantity * unitPrice;
           const id = crypto.randomUUID();
 
-          await sql`INSERT INTO sales (id, product_id, quantity, unit_price, total_revenue, date, transaction_id) VALUES (${id}, ${productId}, ${quantity}, ${unitPrice}, ${totalRevenue}, ${date.toISOString()}, ${transactionId})`;
+          await sql`INSERT INTO sales (id, product_id, quantity, unit_price, total_revenue, date, transaction_id, seller_id) VALUES (${id}, ${productId}, ${quantity}, ${unitPrice}, ${totalRevenue}, ${date.toISOString()}, ${transactionId}, ${user.id})`;
           await sql`UPDATE products SET current_stock = current_stock - ${quantity} WHERE id = ${productId}`;
 
-          resultItems.push({ id, productId, productName: product.name, productCode: product.code, quantity, unitPrice, totalRevenue, date: date.toISOString(), transactionId });
+          resultItems.push({ id, productId, productName: product.name, productCode: product.code, quantity, unitPrice, totalRevenue, date: date.toISOString(), transactionId, sellerId: user.id, sellerName: user.username });
         }
         await sql`COMMIT`;
       } catch (e) {
@@ -135,10 +151,10 @@ export async function POST(request: Request) {
     const totalRevenue = quantity * unitPrice;
     const date = new Date();
 
-    await sql`INSERT INTO sales (id, product_id, quantity, unit_price, total_revenue, date) VALUES (${id}, ${productId}, ${quantity}, ${unitPrice}, ${totalRevenue}, ${date.toISOString()})`;
+    await sql`INSERT INTO sales (id, product_id, quantity, unit_price, total_revenue, date, seller_id) VALUES (${id}, ${productId}, ${quantity}, ${unitPrice}, ${totalRevenue}, ${date.toISOString()}, ${user.id})`;
     await sql`UPDATE products SET current_stock = current_stock - ${quantity} WHERE id = ${productId}`;
 
-    return NextResponse.json({ id, productId, productName: prodRows[0].name, productCode: prodRows[0].code, quantity, unitPrice, totalRevenue, date: date.toISOString() }, { status: 201 });
+    return NextResponse.json({ id, productId, productName: prodRows[0].name, productCode: prodRows[0].code, quantity, unitPrice, totalRevenue, date: date.toISOString(), sellerId: user.id, sellerName: user.username }, { status: 201 });
   } catch (err) {
     return NextResponse.json({ error: 'Failed to create sale', details: String(err) }, { status: 500 });
   }

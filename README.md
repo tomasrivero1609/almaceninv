@@ -1,40 +1,47 @@
-# Sistema de Inventario 📦
+﻿# Sistema de Inventario ðŸ“¦
 
-Sistema completo de gestión de inventario con Next.js, Tailwind CSS y TypeScript.
+Sistema completo de gestiÃ³n de inventario con Next.js, Tailwind CSS y TypeScript.
 
 ## Funcionalidades
 
-### 🎯 Productos
-- Gestión completa de productos con:
-  - Nombre y código
+## Acceso y roles
+
+- **Administrador** (admin / admin123 por defecto): acceso total a productos, entradas, salidas, resumen y ajustes de precios.
+- **Vendedor** (seller / seller123 por defecto): acceso exclusivo a la pantalla de salidas; el resto de las secciones queda bloqueado automaticamente.
+- Puedes sobrescribir las credenciales mediante las variables de entorno DEFAULT_ADMIN_USER, DEFAULT_ADMIN_PASSWORD, DEFAULT_SELLER_USER y DEFAULT_SELLER_PASSWORD.
+- El resumen financiero ahora muestra actividad por vendedor con conteos de ventas por dia, semana y mes.
+
+### ðŸŽ¯ Productos
+- GestiÃ³n completa de productos con:
+  - Nombre y cÃ³digo
   - Costo unitario y precio de venta
   - Stock actual
   - Total invertido en compras
 
-### ⬇️ Entradas (Compras)
+### â¬‡ï¸ Entradas (Compras)
 - Registro de compras de productos
-- Suma automática de stock
-- Cálculo de costo total
+- Suma automÃ¡tica de stock
+- CÃ¡lculo de costo total
 - Historial de todas las entradas
 
-### ⬆️ Salidas (Ventas)
+### â¬†ï¸ Salidas (Ventas)
 - Registro de ventas de productos
-- Resta automática de stock
-- Cálculo de ingresos por venta
-- Validación de stock disponible
+- Resta automÃ¡tica de stock
+- CÃ¡lculo de ingresos por venta
+- ValidaciÃ³n de stock disponible
 - Historial de todas las ventas
 
-### 💰 Resumen Financiero
+### ðŸ’° Resumen Financiero
 - Total invertido en compras
 - Total vendido
 - Ganancia bruta
-- Estadísticas de productos
-- Alertas de pérdidas
+- EstadÃ­sticas de productos
+- Alertas de pÃ©rdidas
 
-## Tecnologías
+## TecnologÃ­as
 
 - **Next.js 16** - Framework React
-- **TypeScript** - Tipado estático
+- **TypeScript** - Tipado estÃ¡tico
 - **Tailwind CSS 4** - Estilos
 - **Vercel Postgres** - Persistencia de datos centralizada (API con App Router)
 
@@ -54,19 +61,19 @@ npm run dev
 
 Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 
-## Configuración de Entorno
+## ConfiguraciÃ³n de Entorno
 
-Crea un archivo `.env.local` en la carpeta `frontend` (ya está ignorado por Git) con:
+Crea un archivo `.env.local` en la carpeta `frontend` (ya estÃ¡ ignorado por Git) con:
 
 ```bash
 POSTGRES_URL="postgres://usuario:password@host:port/dbname?sslmode=require"
 ```
 
-Para despliegues en Vercel, define `POSTGRES_URL` en Project Settings → Environment Variables.
+Para despliegues en Vercel, define `POSTGRES_URL` en Project Settings â†’ Environment Variables.
 
 ## Despliegue en Vercel
 
-### Opción 1: Desde la línea de comandos
+### OpciÃ³n 1: Desde la lÃ­nea de comandos
 
 1. Instala la CLI de Vercel:
 ```bash
@@ -80,16 +87,16 @@ vercel
 
 3. Sigue las instrucciones en pantalla
 
-### Opción 2: Automático desde GitHub (RECOMENDADO)
+### OpciÃ³n 2: AutomÃ¡tico desde GitHub (RECOMENDADO)
 
-1. Sube tu código a GitHub (o crea el repo y haz `git push`)
-2. En Vercel, haz clic en “Add New Project” → “Import Git Repository”
-3. En configuración inicial:
+1. Sube tu cÃ³digo a GitHub (o crea el repo y haz `git push`)
+2. En Vercel, haz clic en â€œAdd New Projectâ€ â†’ â€œImport Git Repositoryâ€
+3. En configuraciÃ³n inicial:
    - `Root Directory`: `frontend`
    - Variables de entorno: agrega `POSTGRES_URL`
-4. Confirma y despliega. Cada push a `main` creará una Preview/Production automática.
+4. Confirma y despliega. Cada push a `main` crearÃ¡ una Preview/Production automÃ¡tica.
 
-### Opción 3: Arrastra y suelta
+### OpciÃ³n 3: Arrastra y suelta
 
 1. Construye el proyecto localmente:
 ```bash
@@ -99,45 +106,48 @@ npm run build
 2. Ve a [vercel.com/new](https://vercel.com/new)
 3. Arrastra la carpeta `.next` generada
 
-## Características del Despliegue
+## CaracterÃ­sticas del Despliegue
 
-- ✅ Hosting estático y SSR
-- ✅ SSL automático
-- ✅ URLs personalizadas
-- ✅ CDN global
-- ✅ Despliegues instantáneos desde Git
-- ✅ Previsualizaciones por cada push/PR
+- âœ… Hosting estÃ¡tico y SSR
+- âœ… SSL automÃ¡tico
+- âœ… URLs personalizadas
+- âœ… CDN global
+- âœ… Despliegues instantÃ¡neos desde Git
+- âœ… Previsualizaciones por cada push/PR
 
 ## Nota sobre el Almacenamiento
 
-La app usa **Vercel Postgres** mediante endpoints (`/api/products`, `/api/entries`, `/api/sales`). Asegúrate de configurar `POSTGRES_URL` para que el backend funcione tanto en local como en Vercel.
+La app usa **Vercel Postgres** mediante endpoints (`/api/products`, `/api/entries`, `/api/sales`). AsegÃºrate de configurar `POSTGRES_URL` para que el backend funcione tanto en local como en Vercel.
 
 ## Scripts Disponibles
 
 - `npm run dev` - Inicia el servidor de desarrollo
-- `npm run build` - Construye la aplicación para producción
-- `npm run start` - Inicia el servidor de producción
+- `npm run build` - Construye la aplicaciÃ³n para producciÃ³n
+- `npm run start` - Inicia el servidor de producciÃ³n
 - `npm run lint` - Ejecuta el linter
 
 ## Estructura del Proyecto
 
 ```
 frontend/
-├── app/
-│   ├── layout.tsx        # Layout principal
-│   ├── page.tsx          # Página de inicio
-│   ├── productos/        # Página de productos
-│   ├── entradas/         # Página de entradas
-│   ├── salidas/          # Página de salidas
-│   └── resumen/          # Página de resumen
-├── components/
-│   └── Navigation.tsx    # Componente de navegación
-├── lib/
-│   └── storage.ts        # Llamadas a API (Vercel Postgres)
-└── types/
-    └── index.ts          # Tipos TypeScript
+â”œâ”€â”€ app/
+â”‚   â”œâ”€â”€ layout.tsx        # Layout principal
+â”‚   â”œâ”€â”€ page.tsx          # PÃ¡gina de inicio
+â”‚   â”œâ”€â”€ productos/        # PÃ¡gina de productos
+â”‚   â”œâ”€â”€ entradas/         # PÃ¡gina de entradas
+â”‚   â”œâ”€â”€ salidas/          # PÃ¡gina de salidas
+â”‚   â””â”€â”€ resumen/          # PÃ¡gina de resumen
+â”œâ”€â”€ components/
+â”‚   â””â”€â”€ Navigation.tsx    # Componente de navegaciÃ³n
+â”œâ”€â”€ lib/
+â”‚   â””â”€â”€ storage.ts        # Llamadas a API (Vercel Postgres)
+â””â”€â”€ types/
+    â””â”€â”€ index.ts          # Tipos TypeScript
 ```
 
 ## Licencia
 
-Este proyecto es de código abierto y está disponible bajo la licencia MIT.
+Este proyecto es de cÃ³digo abierto y estÃ¡ disponible bajo la licencia MIT.
+
+
+

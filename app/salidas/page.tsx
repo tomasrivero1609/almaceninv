@@ -1,11 +1,20 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { Product, Sale } from "@/types";
 import { getProducts, getSales, addMultiSale } from "@/lib/storage";
 import { useToastContext } from '@/components/ToastProvider';
+import { useSession } from '@/components/SessionProvider';
 
 type CartItem = { productId: string; quantity: string };
+type SaleGroup = {
+  id: string;
+  date: string;
+  items: Sale[];
+  total: number;
+  sellerName: string;
+  sellerId?: string;
+};
 
 export default function SalidasPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -16,6 +25,7 @@ export default function SalidasPage() {
   const [submitting, setSubmitting] = useState(false);
   const availableProducts = useMemo(() => products.filter((p) => p.currentStock > 0), [products]);
   const toast = useToastContext();
+  const { user } = useSession();
 
   useEffect(() => {
     const load = async () => {
@@ -65,7 +75,7 @@ export default function SalidasPage() {
       setCart([{ productId: "", quantity: "" }]);
       toast.success('Venta registrada correctamente');
     } catch (err) {
-      toast.error("No se pudo registrar la venta múltiple. Verifica stock y precios.");
+      toast.error("No se pudo registrar la venta mÃºltiple. Verifica stock y precios.");
     } finally {
       setSubmitting(false);
     }
@@ -75,24 +85,57 @@ export default function SalidasPage() {
   const cartTotal = cart.reduce((sum, line) => sum + (parseFloat(line.quantity) || 0) * linePrice(line.productId), 0);
 
   // Group sales by transactionId (fallback to id)
-  const groups = useMemo(() => {
-    const map = new Map<string, { id: string; date: string; items: Sale[]; total: number }>();
+  const groups = useMemo<SaleGroup[]>(() => {
+    const map = new Map<string, SaleGroup>();
     for (const s of sales) {
       const key = s.transactionId || s.id;
-      const g = map.get(key) || { id: key, date: s.date, items: [], total: 0 };
-      g.items.push(s);
-      g.total += s.totalRevenue;
-      if (new Date(s.date) < new Date(g.date)) g.date = s.date;
-      map.set(key, g);
+      const existing = map.get(key);
+      const sellerName = s.sellerName ?? existing?.sellerName ?? "Sin asignar";
+      let group = existing;
+      if (!group) {
+        group = { id: key, date: s.date, items: [], total: 0, sellerName, sellerId: s.sellerId };
+      }
+      group.items.push(s);
+      group.total += s.totalRevenue;
+      if (new Date(s.date) < new Date(group.date)) group.date = s.date;
+      group.sellerName = sellerName;
+      if (s.sellerId) {
+        group.sellerId = s.sellerId;
+      }
+      map.set(key, group);
     }
     return Array.from(map.values()).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [sales]);
 
-  const exportCsv = (g: { id: string; date: string; items: Sale[]; total: number }) => {
-    const header = ['transactionId','date','productCode','productName','quantity','unitPrice','totalRevenue'];
+  const personalStats = useMemo(() => {
+    if (!user) return null;
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfWeek = new Date(startOfDay);
+    const weekday = (startOfWeek.getDay() + 6) % 7;
+    startOfWeek.setDate(startOfWeek.getDate() - weekday);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const metrics = { today: 0, week: 0, month: 0, total: 0 };
+    for (const group of groups) {
+      const belongs =
+        (group.sellerId && group.sellerId === user.id) ||
+        (!group.sellerId && group.sellerName === user.username);
+      if (!belongs) continue;
+      const date = new Date(group.date);
+      metrics.total += 1;
+      if (date >= startOfDay) metrics.today += 1;
+      if (date >= startOfWeek) metrics.week += 1;
+      if (date >= startOfMonth) metrics.month += 1;
+    }
+    return metrics;
+  }, [groups, user]);
+
+  const exportCsv = (g: SaleGroup) => {
+    const header = ['transactionId','date','seller','productCode','productName','quantity','unitPrice','totalRevenue'];
     const rows = g.items.map(it => [
       it.transactionId || g.id,
       new Date(it.date).toISOString(),
+      g.sellerName,
       it.productCode,
       it.productName,
       String(it.quantity),
@@ -109,10 +152,12 @@ export default function SalidasPage() {
     URL.revokeObjectURL(url);
   };
 
-  const printGroup = (g: { id: string; date: string; items: Sale[]; total: number }) => {
+  const printGroup = (g: SaleGroup) => {
     const w = window.open('', '_blank');
     if (!w) return;
-    const rows = g.items.map(it => `
+    const rows = g.items
+      .map(
+        (it) => `
       <tr>
         <td style="padding:4px 8px;border-bottom:1px solid #ddd;">${it.productCode}</td>
         <td style="padding:4px 8px;border-bottom:1px solid #ddd;">${it.productName}</td>
@@ -120,7 +165,9 @@ export default function SalidasPage() {
         <td style="padding:4px 8px;border-bottom:1px solid #ddd;">$${it.unitPrice.toFixed(2)}</td>
         <td style="padding:4px 8px;border-bottom:1px solid #ddd;">$${it.totalRevenue.toFixed(2)}</td>
       </tr>
-    `).join('');
+    `
+      )
+      .join('');
     w.document.write(`
       <html>
         <head>
@@ -136,12 +183,13 @@ export default function SalidasPage() {
         </head>
         <body>
           <h1>Recibo de venta</h1>
-          <p>Transacción: ${g.id}</p>
+          <p>Transaccion: ${g.id}</p>
           <p>Fecha: ${new Date(g.date).toLocaleString()}</p>
+          <p>Vendedor: ${g.sellerName}</p>
           <table>
             <thead>
               <tr>
-                <th>Código</th>
+                <th>Codigo</th>
                 <th>Producto</th>
                 <th>Cantidad</th>
                 <th>Precio</th>
@@ -171,6 +219,21 @@ export default function SalidasPage() {
           Registrar Venta
         </button>
       </div>
+      {user?.role === 'seller' && personalStats && !loading && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+          {[
+            { label: 'Hoy', value: personalStats.today },
+            { label: 'Semana', value: personalStats.week },
+            { label: 'Mes', value: personalStats.month },
+            { label: 'Total', value: personalStats.total },
+          ].map((item) => (
+            <div key={item.label} className="rounded-xl border border-zinc-200/40 dark:border-zinc-800/40 bg-white/70 dark:bg-zinc-900/40 p-4 text-center shadow-sm">
+              <p className="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{item.label}</p>
+              <p className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-100">{item.value}</p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {loading ? (
         <div className="rounded-xl shadow-sm p-12 text-center border border-zinc-200/20 bg-white/70 dark:bg-zinc-900/50">
@@ -195,10 +258,14 @@ export default function SalidasPage() {
                 <div className="space-y-0.5">
                   <p className="text-sm text-zinc-500 dark:text-zinc-400">Venta</p>
                   <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{new Date(g.date).toLocaleString()}</h3>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    Vendedor:{' '}
+                    <span className="font-medium text-zinc-700 dark:text-zinc-200">{g.sellerName}</span>
+                  </p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-zinc-500 dark:text-zinc-400">Total</p>
-                  <p className="text-xl font-bold text-green-600 dark:text-green-600 dark:text-green-400">${g.total.toFixed(2)}</p>
+                  <p className="text-xl font-bold text-green-600 dark:text-green-400">${g.total.toFixed(2)}</p>
                 </div>
               </div>
           <div className="overflow-x-auto">
@@ -354,3 +421,8 @@ export default function SalidasPage() {
     </div>
   );
 }
+
+
+
+
+

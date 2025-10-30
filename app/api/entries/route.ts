@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
+import { ensureAuthTables, getCurrentUser } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 async function ensureTables() {
+  await ensureAuthTables();
   await sql`
     CREATE TABLE IF NOT EXISTS products (
       id VARCHAR(64) PRIMARY KEY,
@@ -31,6 +33,10 @@ async function ensureTables() {
 export async function GET() {
   try {
     await ensureTables();
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    }
     const { rows } = await sql`
       SELECT
         e.id,
@@ -54,6 +60,10 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     await ensureTables();
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    }
     const body = await request.json();
     const id = crypto.randomUUID();
     const { productId, quantity, unitCost } = body;

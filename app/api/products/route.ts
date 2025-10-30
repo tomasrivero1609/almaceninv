@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
+import { ensureAuthTables, getCurrentUser } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 async function ensureTables() {
+  await ensureAuthTables();
   await sql`
     CREATE TABLE IF NOT EXISTS products (
       id VARCHAR(64) PRIMARY KEY,
@@ -21,6 +23,10 @@ async function ensureTables() {
 export async function GET() {
   try {
     await ensureTables();
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
     const { rows } = await sql`SELECT id, code, name, unit_cost::float8 AS "unitCost", sale_price::float8 AS "salePrice", current_stock::float8 AS "currentStock", total_invested::float8 AS "totalInvested" FROM products ORDER BY name ASC`;
     return NextResponse.json(rows);
   } catch (err) {
@@ -31,6 +37,10 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     await ensureTables();
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    }
     const body = await request.json();
     const id = crypto.randomUUID();
     const { name, code, unitCost, salePrice } = body;
@@ -52,13 +62,17 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     await ensureTables();
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    }
     const body = await request.json();
     const { id, name, code, unitCost, salePrice } = body;
     if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
     // Update only provided fields
     const fields: string[] = [];
-    const values: any[] = [];
+    const values: Array<string | number> = [];
     if (name !== undefined) { fields.push(`name = $${fields.length + 1}`); values.push(name); }
     if (code !== undefined) { fields.push(`code = $${fields.length + 1}`); values.push(code); }
     if (unitCost !== undefined) { fields.push(`unit_cost = $${fields.length + 1}`); values.push(unitCost); }
@@ -77,6 +91,10 @@ export async function PUT(request: Request) {
 export async function DELETE(request: Request) {
   try {
     await ensureTables();
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    }
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });

@@ -1,4 +1,4 @@
-import { Product, Entry, Sale } from '@/types';
+﻿import { Product, Entry, Sale, SessionUser } from '@/types';
 
 // Products (API-backed)
 export const getProducts = async (): Promise<Product[]> => {
@@ -87,7 +87,42 @@ export const addMultiSale = async (items: Array<{ productId: string; quantity: n
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ items }),
   });
-  if (!res.ok) throw new Error('Error al registrar venta múltiple');
+  if (!res.ok) throw new Error('Error al registrar venta multiple');
   return res.json();
 };
+
+export const login = async (username: string, password: string): Promise<SessionUser> => {
+  const res = await fetch('/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.error ?? 'No fue posible iniciar sesion');
+  }
+  return data as SessionUser;
+};
+
+export const logout = async (): Promise<void> => {
+  const res = await fetch('/api/auth/logout', { method: 'POST' });
+  if (!res.ok) {
+    throw new Error('No fue posible cerrar sesion');
+  }
+};
+
+export const getSession = async (): Promise<{ authenticated: boolean; user: SessionUser | null }> => {
+  const res = await fetch('/api/auth/session', { cache: 'no-store' });
+  if (!res.ok) {
+    throw new Error('No fue posible validar la sesion');
+  }
+  const data = await res.json();
+  if (!data?.authenticated) {
+    return { authenticated: false, user: null };
+  }
+  return { authenticated: true, user: data.user as SessionUser };
+};
+
+
+
 

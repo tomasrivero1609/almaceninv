@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navigation from "@/components/Navigation";
 import ToastProvider from "@/components/ToastProvider";
+import SessionProvider from "@/components/SessionProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,7 +17,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Sistema de Inventario",
-  description: "Gestión de inventario y almacén",
+  description: "Gestion de inventario y almacen",
 };
 
 export default function RootLayout({
@@ -29,12 +30,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ToastProvider>
-          <Navigation />
-          <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-            {children}
-          </main>
-        </ToastProvider>
+        <SessionProvider>
+          <ToastProvider>
+            <Navigation />
+            <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+              {children}
+            </main>
+          </ToastProvider>
+        </SessionProvider>
       </body>
     </html>
   );

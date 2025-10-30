@@ -29,11 +29,21 @@ export interface Sale {
   totalRevenue: number;
   date: string;
   transactionId?: string;
+  sellerId?: string;
+  sellerName?: string;
 }
 
 export interface Summary {
   totalInvested: number;
   totalSold: number;
   grossProfit: number;
+}
+
+export type UserRole = 'admin' | 'seller';
+
+export interface SessionUser {
+  id: string;
+  username: string;
+  role: UserRole;
 }
 
