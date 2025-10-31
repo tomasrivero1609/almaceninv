@@ -54,7 +54,7 @@ export async function ensureDefaultAdmin() {
   }
 
   const username = process.env.DEFAULT_ADMIN_USER ?? 'admin';
-  const password = process.env.DEFAULT_ADMIN_PASSWORD ?? 'admin123';
+  const password = process.env.DEFAULT_ADMIN_PASSWORD ?? 'suzalmacen123';
   const id = crypto.randomUUID();
   const passwordHash = hashPassword(password);
 
@@ -69,8 +69,8 @@ export async function ensureDefaultAdmin() {
 async function ensureDefaultSeller() {
   const { rows } = await sql`SELECT id FROM users WHERE role = 'seller' LIMIT 1`;
   if (rows.length > 0) return;
-  const username = process.env.DEFAULT_SELLER_USER ?? 'seller';
-  const password = process.env.DEFAULT_SELLER_PASSWORD ?? 'seller123';
+  const username = process.env.DEFAULT_SELLER_USER ?? 'vendedor';
+  const password = process.env.DEFAULT_SELLER_PASSWORD ?? 'vendedoralmacen123';
   const id = crypto.randomUUID();
   const passwordHash = hashPassword(password);
   await sql`

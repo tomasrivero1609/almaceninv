@@ -6,8 +6,8 @@ Sistema completo de gestiÃ³n de inventario con Next.js, Tailwind CSS y TypeScr
 
 ## Acceso y roles
 
-- **Administrador** (admin / admin123 por defecto): acceso total a productos, entradas, salidas, resumen y ajustes de precios.
-- **Vendedor** (seller / seller123 por defecto): acceso exclusivo a la pantalla de salidas; el resto de las secciones queda bloqueado automaticamente.
+- **Administrador** (admin / suzalmacen123 por defecto): acceso total a productos, entradas, salidas, resumen y ajustes de precios.
+- **Vendedor** (vendedor / vendedoralmacen123 por defecto): acceso exclusivo a la pantalla de salidas; el resto de las secciones queda bloqueado automaticamente.
 - Puedes sobrescribir las credenciales mediante las variables de entorno DEFAULT_ADMIN_USER, DEFAULT_ADMIN_PASSWORD, DEFAULT_SELLER_USER y DEFAULT_SELLER_PASSWORD.
 - El resumen financiero ahora muestra actividad por vendedor con conteos de ventas por dia, semana y mes.
 
@@ -148,6 +148,7 @@ frontend/
 ## Licencia
 
 Este proyecto es de cÃ³digo abierto y estÃ¡ disponible bajo la licencia MIT.
+
 
 
 

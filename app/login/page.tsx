@@ -88,7 +88,7 @@ function LoginContent() {
           </button>
         </form>
         <p className="mt-6 text-sm text-zinc-500 dark:text-zinc-400 text-center">
-          Usa tus credenciales asignadas. El usuario administrador predeterminado es <span className="font-semibold">admin</span> / <span className="font-semibold">admin123</span>.
+          Usuarios iniciales: <span className="font-semibold">admin</span> / <span className="font-semibold">suzalmacen123</span> y <span className="font-semibold">vendedor</span> / <span className="font-semibold">vendedoralmacen123</span>.
         </p>
       </div>
     </div>
